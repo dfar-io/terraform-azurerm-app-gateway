@@ -47,12 +47,14 @@ module "app-gateway" {
       name = local.ui-htst
       path = "/"
       is_https = true
+      request_timeout = 30
       probe_name = null
     },
     {
       name = local.api-htst
       path = "/api/"
       is_https = true
+      request_timeout = 30
       probe_name = null
     }
   ]
@@ -121,12 +123,14 @@ module "app-gateway" {
       name = local.ui-htst
       path = "/"
       is_https = true
+      request_timeout = 30
       probe_name = null
     },
     {
       name = local.api-htst
       path = "/api/"
       is_https = true
+      request_timeout = 30
       probe_name = null
     }
   ]
