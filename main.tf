@@ -75,7 +75,7 @@ resource "azurerm_application_gateway" "app-gateway" {
       path                                = backend_http_settings.value.path
       port                                = backend_http_settings.value.is_https ? "443" : "80"
       protocol                            = backend_http_settings.value.is_https ? "Https" : "Http"
-      request_timeout                     = 30
+      request_timeout                     = backend_http_settings.value.request_timeout
       probe_name                          = backend_http_settings.value.probe_name
       pick_host_name_from_backend_address = true
     }

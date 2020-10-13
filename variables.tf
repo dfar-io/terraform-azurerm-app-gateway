@@ -22,10 +22,11 @@ variable "backend_address_pools" {
 variable "backend_http_settings" {
   description = "List of backend HTTP settings."
   type = list(object({
-    name       = string
-    path       = string
-    is_https   = bool
-    probe_name = string
+    name            = string
+    path            = string
+    is_https        = bool
+    request_timeout = string
+    probe_name      = string
   }))
 }
 variable "http_listeners" {
