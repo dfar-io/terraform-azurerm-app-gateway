@@ -1,23 +1,24 @@
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${var.name}vnet"
-  resource_group_name = var.resource_group_name
-  location            = var.resource_group_location
+  name                = "${var.name}-vnet"
+  resource_group_name = var.rg_name
+  location            = var.rg_location
   address_space       = ["10.254.0.0/16"]
 }
 
 resource "azurerm_subnet" "subnet" {
   name                 = "subnet"
-  resource_group_name  = var.resource_group_name
+  resource_group_name  = var.rg_name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefix       = "10.254.0.0/24"
+  address_prefixes     = ["10.254.0.0/24"]
 }
 
 resource "azurerm_public_ip" "publicip" {
-  name                = "${var.name}pip"
-  resource_group_name = var.resource_group_name
-  location            = var.resource_group_location
-  allocation_method   = var.is_public_ip_allocation_static ? "Static" : "Dynamic"
+  name                = "${var.name}-pip"
+  resource_group_name = var.rg_name
+  location            = var.rg_location
+  allocation_method   = "Static"
   sku                 = "Standard"
+  domain_name_label   = var.domain_name_label
 }
 
 # since these variables are re-used - a locals block makes this more maintainable
@@ -26,19 +27,19 @@ locals {
   frontend_ip_configuration_name = "${azurerm_virtual_network.vnet.name}-feip"
 }
 
-resource "azurerm_application_gateway" "network" {
+resource "azurerm_application_gateway" "app-gateway" {
   name                = var.name
-  resource_group_name = var.resource_group_name
-  location            = var.resource_group_location
+  resource_group_name = var.rg_name
+  location            = var.rg_location
 
   sku {
     name     = var.sku_name
     tier     = var.sku_tier
-    capacity = 2
+    capacity = 3
   }
 
   gateway_ip_configuration {
-    name      = "my-gateway-ip-configuration"
+    name      = "gateway-ip-config"
     subnet_id = azurerm_subnet.subnet.id
   }
 
@@ -70,13 +71,13 @@ resource "azurerm_application_gateway" "network" {
     for_each = var.backend_http_settings
     content {
       name                                = backend_http_settings.value.name
-      cookie_based_affinity               = backend_http_settings.value.has_cookie_based_affinity ? "Enabled" : "Disabled"
+      cookie_based_affinity               = "Disabled"
       path                                = backend_http_settings.value.path
-      port                                = backend_http_settings.value.port
+      port                                = backend_http_settings.value.is_https ? "443" : "80"
       protocol                            = backend_http_settings.value.is_https ? "Https" : "Http"
-      request_timeout                     = backend_http_settings.value.request_timeout
+      request_timeout                     = 30
       probe_name                          = backend_http_settings.value.probe_name
-      pick_host_name_from_backend_address = backend_http_settings.value.pick_host_name_from_backend_address
+      pick_host_name_from_backend_address = true
     }
   }
 
@@ -89,7 +90,7 @@ resource "azurerm_application_gateway" "network" {
       protocol                                  = probe.value.is_https ? "Https" : "Http"
       timeout                                   = 30
       unhealthy_threshold                       = 3
-      pick_host_name_from_backend_http_settings = probe.value.pick_host_name_from_backend_http_settings
+      pick_host_name_from_backend_http_settings = true
     }
   }
 
@@ -100,18 +101,47 @@ resource "azurerm_application_gateway" "network" {
       frontend_ip_configuration_name = local.frontend_ip_configuration_name
       frontend_port_name             = http_listener.value.is_https ? "https-port" : "http-port"
       protocol                       = http_listener.value.is_https ? "Https" : "Http"
+      ssl_certificate_name           = http_listener.value.is_https ? "ssl" : null
     }
   }
 
+  # ssl_certificate {
+  #   name =     "ssl"
+  #   data     = filebase64(var.cert_filepath)
+  #   password = var.cert_password
+  # }
+
+  // Basic Rules
   dynamic "request_routing_rule" {
-    for_each = var.request_routing_rules
+    for_each = var.basic_request_routing_rules
     content {
-      name                       = request_routing_rule.value.name
-      rule_type                  = request_routing_rule.value.is_path_based ? "PathBasedRouting" : "Basic"
-      http_listener_name         = request_routing_rule.value.http_listener_name
-      backend_address_pool_name  = request_routing_rule.value.backend_address_pool_name
-      backend_http_settings_name = request_routing_rule.value.backend_http_settings_name
-      url_path_map_name          = request_routing_rule.value.url_path_map_name
+      name                        = request_routing_rule.value.name
+      rule_type                   = "Basic"
+      http_listener_name          = request_routing_rule.value.http_listener_name
+      backend_address_pool_name   = request_routing_rule.value.backend_address_pool_name
+      backend_http_settings_name  = request_routing_rule.value.backend_http_settings_name
+    }
+  }
+
+  // Redirect Rules
+  dynamic "request_routing_rule" {
+    for_each = var.redirect_request_routing_rules
+    content {
+      name                        = request_routing_rule.value.name
+      rule_type                   = "Basic"
+      http_listener_name          = request_routing_rule.value.http_listener_name
+      redirect_configuration_name = request_routing_rule.value.redirect_configuration_name
+    }
+  }
+
+  // Path based rules
+  dynamic "request_routing_rule" {
+    for_each = var.path_based_request_routing_rules
+    content {
+      name                        = request_routing_rule.value.name
+      rule_type                   = "PathBasedRouting"
+      http_listener_name          = request_routing_rule.value.http_listener_name
+      url_path_map_name           = request_routing_rule.value.url_path_map_name
     }
   }
 
@@ -131,6 +161,18 @@ resource "azurerm_application_gateway" "network" {
           paths                      = path_rule.value.paths
         }
       }
+    }
+  }
+
+  dynamic "redirect_configuration" {
+    for_each = var.redirect_configurations
+    content {
+      name         = redirect_configuration.value.name
+      redirect_type     = redirect_configuration.value.redirect_type
+      target_listener_name = redirect_configuration.value.target_listener_name
+      target_url = redirect_configuration.value.target_url
+      include_path = redirect_configuration.value.include_path
+      include_query_string = redirect_configuration.value.include_query_string
     }
   }
 }

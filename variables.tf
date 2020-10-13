@@ -1,12 +1,16 @@
-variable "resource_group_name" {
+// Required
+variable "rg_name" {
   description = "Name of the resource group to place App Gateway in."
 }
-variable "resource_group_location" {
+variable "rg_location" {
   description = "Location of the resource group to place App Gateway in."
 }
 variable "name" {
   description = "Name of App Gateway"
 }
+
+
+// Optional
 variable "backend_address_pools" {
   description = "List of backend address pools."
   type = list(object({
@@ -18,14 +22,10 @@ variable "backend_address_pools" {
 variable "backend_http_settings" {
   description = "List of backend HTTP settings."
   type = list(object({
-    name                                = string
-    has_cookie_based_affinity           = bool
-    path                                = string
-    port                                = number
-    is_https                            = bool
-    request_timeout                     = number
-    probe_name                          = string
-    pick_host_name_from_backend_address = bool
+    name       = string
+    path       = string
+    is_https   = bool
+    probe_name = string
   }))
 }
 variable "http_listeners" {
@@ -35,28 +35,42 @@ variable "http_listeners" {
     is_https = bool
   }))
 }
-variable "request_routing_rules" {
+variable "basic_request_routing_rules" {
   description = "Request routing rules to be used for listeners."
   type = list(object({
-    name                       = string
-    http_listener_name         = string
-    backend_address_pool_name  = string
-    backend_http_settings_name = string
-    is_path_based              = bool
-    url_path_map_name          = string
+    name                        = string
+    http_listener_name          = string
+    backend_address_pool_name   = string
+    backend_http_settings_name  = string
   }))
+  default = []
 }
-variable "is_public_ip_allocation_static" {
-  description = "Is the public IP address of the App Gateway static?"
-  default     = false
+variable "redirect_request_routing_rules" {
+  description = "Request routing rules to be used for listeners."
+  type = list(object({
+    name                        = string
+    http_listener_name          = string
+    redirect_configuration_name = string
+  }))
+  default = []
 }
+variable "path_based_request_routing_rules" {
+  description = "Request routing rules to be used for listeners."
+  type = list(object({
+    name               = string
+    http_listener_name = string
+    url_path_map_name  = string
+  }))
+  default = []
+}
+
 variable "sku_name" {
   description = "Name of App Gateway SKU."
-  default     = "Standard_Small"
+  default     = "Standard_v2"
 }
 variable "sku_tier" {
   description = "Tier of App Gateway SKU."
-  default     = "Standard"
+  default     = "Standard_v2"
 }
 variable "probes" {
   description = "Health probes used to test backend health."
@@ -65,7 +79,6 @@ variable "probes" {
     name                                      = string
     path                                      = string
     is_https                                  = bool
-    pick_host_name_from_backend_http_settings = bool
   }))
 }
 variable "url_path_maps" {
@@ -81,5 +94,41 @@ variable "url_path_maps" {
       backend_http_settings_name = string
       paths                      = list(string)
     }))
+  }))
+}
+
+variable "domain_name_label" {
+  description = "Domain name label for Public IP created."
+  default = null
+}
+variable "cert_filepath" {
+  description = "Filepath for local PFX file."
+  default = null
+}
+variable "cert_password" {
+  description = "Password for PFX file."
+  default = null
+}
+
+variable "ips_allowed" {
+  description = "A list of IP addresses to allow to connect to App Gateway."
+  default     = []
+  type = list(object({
+    name         = string
+    priority     = number
+    ip_addresses = string
+  }))
+}
+
+variable "redirect_configurations" {
+  description = "A collection of redirect configurations."
+  default     = []
+  type = list(object({
+    name         = string
+    redirect_type     = string
+    target_listener_name = string
+    target_url = string
+    include_path = bool
+    include_query_string = bool
   }))
 }
