@@ -99,17 +99,20 @@ resource "azurerm_application_gateway" "app-gateway" {
     content {
       name                           = http_listener.value.name
       frontend_ip_configuration_name = local.frontend_ip_configuration_name
-      frontend_port_name             = http_listener.value.is_https ? "https-port" : "http-port"
-      protocol                       = http_listener.value.is_https ? "Https" : "Http"
-      ssl_certificate_name           = http_listener.value.is_https ? "ssl" : null
+      frontend_port_name             = http_listener.value.ssl_certificate_name != null ? "https-port" : "http-port"
+      protocol                       = http_listener.value.ssl_certificate_name != null ? "Https" : "Http"
+      ssl_certificate_name           = http_listener.value.ssl_certificate_name
     }
   }
 
-  # ssl_certificate {
-  #   name =     "ssl"
-  #   data     = filebase64(var.cert_filepath)
-  #   password = var.cert_password
-  # }
+  dynamic "ssl_certificate" {
+    for_each = var.ssl_certificates
+    content {
+      name     = ssl_certificate.value.name
+      data     = filebase64(ssl_certificate.value.pfx_cert_filepath)
+      password = ssl_certificate.value.pfx_cert_password
+    }
+  }
 
   // Basic Rules
   dynamic "request_routing_rule" {
@@ -167,11 +170,11 @@ resource "azurerm_application_gateway" "app-gateway" {
   dynamic "redirect_configuration" {
     for_each = var.redirect_configurations
     content {
-      name         = redirect_configuration.value.name
-      redirect_type     = redirect_configuration.value.redirect_type
+      name                 = redirect_configuration.value.name
+      redirect_type        = redirect_configuration.value.redirect_type
       target_listener_name = redirect_configuration.value.target_listener_name
-      target_url = redirect_configuration.value.target_url
-      include_path = redirect_configuration.value.include_path
+      target_url           = redirect_configuration.value.target_url
+      include_path         = redirect_configuration.value.include_path
       include_query_string = redirect_configuration.value.include_query_string
     }
   }

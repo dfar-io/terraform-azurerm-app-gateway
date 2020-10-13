@@ -29,10 +29,10 @@ variable "backend_http_settings" {
   }))
 }
 variable "http_listeners" {
-  description = "List of HTTP listeners."
+  description = "List of HTTP/HTTPS listeners. HTTPS listeners require an SSL Certificate object."
   type = list(object({
-    name     = string
-    is_https = bool
+    name                 = string
+    ssl_certificate_name = string
   }))
 }
 variable "basic_request_routing_rules" {
@@ -101,14 +101,6 @@ variable "domain_name_label" {
   description = "Domain name label for Public IP created."
   default = null
 }
-variable "cert_filepath" {
-  description = "Filepath for local PFX file."
-  default = null
-}
-variable "cert_password" {
-  description = "Password for PFX file."
-  default = null
-}
 
 variable "ips_allowed" {
   description = "A list of IP addresses to allow to connect to App Gateway."
@@ -124,11 +116,21 @@ variable "redirect_configurations" {
   description = "A collection of redirect configurations."
   default     = []
   type = list(object({
-    name         = string
-    redirect_type     = string
+    name                 = string
+    redirect_type        = string
     target_listener_name = string
-    target_url = string
-    include_path = bool
+    target_url           = string
+    include_path         = bool
     include_query_string = bool
+  }))
+}
+
+variable "ssl_certificates" {
+  description = "SSL Certificate objects to be used for HTTPS listeners. Requires a PFX certificate stored on the machine running the Terraform apply."
+  default     = []
+  type = list(object({
+    name              = string
+    pfx_cert_filepath = string
+    pfx_cert_password = string
   }))
 }
