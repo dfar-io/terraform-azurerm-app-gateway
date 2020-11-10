@@ -62,7 +62,8 @@ module "app-gateway" {
   http_listeners = [
     {
       name                 = local.http-listener
-      ssl_certificate_name = false
+      ssl_certificate_name = null
+      host_name            = null
     }
   ]
 
@@ -139,10 +140,12 @@ module "app-gateway" {
     {
       name                 = local.http-listener
       ssl_certificate_name = null
+      host_name            = null
     },
     {
       name                 = local.https-listener
       ssl_certificate_name = local.ssl-certificate
+      host_name            = null
     }
   ]
 

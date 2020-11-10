@@ -34,6 +34,7 @@ variable "http_listeners" {
   type = list(object({
     name                 = string
     ssl_certificate_name = string
+    host_name            = string
   }))
 }
 variable "basic_request_routing_rules" {
