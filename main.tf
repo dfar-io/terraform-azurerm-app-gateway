@@ -16,8 +16,8 @@ resource "azurerm_public_ip" "publicip" {
   name                = "${var.name}-pip"
   resource_group_name = var.rg_name
   location            = var.rg_location
-  allocation_method   = "Static"
-  sku                 = "Standard"
+  allocation_method   = var.sku_tier == "Standard" ? "Dynamic" : "Static"
+  sku                 = var.sku_tier == "Standard" ? "Basic" : "Standard"
   domain_name_label   = var.domain_name_label
 }
 

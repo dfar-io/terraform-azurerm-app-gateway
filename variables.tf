@@ -67,12 +67,12 @@ variable "path_based_request_routing_rules" {
 }
 
 variable "sku_name" {
-  description = "Name of App Gateway SKU."
-  default     = "Standard_v2"
+  description = "Name of App Gateway SKU. Options include Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2"
+  default     = "Standard_Small"
 }
 variable "sku_tier" {
-  description = "Tier of App Gateway SKU."
-  default     = "Standard_v2"
+  description = "Tier of App Gateway SKU. Options include Standard, Standard_v2, WAF and WAF_v2"
+  default     = "Standard"
 }
 variable "probes" {
   description = "Health probes used to test backend health."
