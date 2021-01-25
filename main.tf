@@ -180,3 +180,11 @@ resource "azurerm_application_gateway" "app-gateway" {
     }
   }
 }
+
+// Allows dynamic app gateway IP to be used.
+// https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip#ip_address
+data "azurerm_public_ip" "publicip" {
+  name                = azurerm_public_ip.publicip.name
+  resource_group_name = var.rg_name
+  depends_on          = [azurerm_application_gateway.app-gateway]
+}

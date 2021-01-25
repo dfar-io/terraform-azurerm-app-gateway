@@ -5,5 +5,7 @@ output "fqdn" {
 
 output "ip_address" {
     description = "Public IP Address of App Gateway."
-    value = azurerm_public_ip.publicip.ip_address
+    value = (var.sku_tier == "Standard" ?
+        data.azurerm_public_ip.publicip.ip_address :
+        azurerm_public_ip.publicip.ip_address)
 }
