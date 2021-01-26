@@ -35,6 +35,7 @@ variable "http_listeners" {
     name                 = string
     ssl_certificate_name = string
     host_name            = string
+    require_sni          = bool
   }))
 }
 variable "basic_request_routing_rules" {

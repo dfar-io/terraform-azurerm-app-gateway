@@ -103,6 +103,9 @@ resource "azurerm_application_gateway" "app-gateway" {
       protocol                       = http_listener.value.ssl_certificate_name != null ? "Https" : "Http"
       ssl_certificate_name           = http_listener.value.ssl_certificate_name
       host_name                      = http_listener.value.host_name
+      require_sni                    = (http_listener.value.ssl_certificate_name != null ?
+                                          http_listener.value.require_sni :
+                                          null)
     }
   }
 
