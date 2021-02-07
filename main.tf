@@ -182,6 +182,22 @@ resource "azurerm_application_gateway" "app-gateway" {
       include_query_string = redirect_configuration.value.include_query_string
     }
   }
+
+  // Created in response to Tevora scan
+  ssl_policy {
+    policy_type = "Custom"
+    cipher_suites = [
+      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+    ]
+    min_protocol_version = "TLSv1_2"
+  }
 }
 
 // Allows dynamic app gateway IP to be used.
